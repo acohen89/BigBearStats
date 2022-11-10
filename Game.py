@@ -14,7 +14,6 @@ class Game:
         self.ds = 0
         self.completions = 0
 
-
     def incrPP(self):
         self.pointsPlayed += 1
     def incrPulls(self, pull):
@@ -23,6 +22,18 @@ class Game:
         self.assists += 1
     def incrGoals(self):
         self.goals += 1
+    def incrCatches(self):
+        self.catches += 1
+    def incrATOA(self):
+        self.assistsToAssists += 1
+    def incrDs(self):
+        self.ds += 1
+    def incrDrops(self):
+        self.drops += 1
+    def incrThrowaways(self):
+        self.throwaways += 1
+    def incrCompletions(self):
+        self.completions += 1
     def __eq__(self, other):
         return self.tournament == other.tournament and self.opponent == self.opponent
     def __str__(self): 

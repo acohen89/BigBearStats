@@ -30,10 +30,10 @@ def processActions(df, players):
     curOpponent = ''
     ourScore = 0
     theirScore = 0
+    prevPasser = 'Anonymous'
     for row in range(len(df)):
         curAction = df.iloc[row]
         name, game, line, eventType, action, passer, receiver, defender, hangTime, player0, player1, player2, player3, player4, player5, player6, ourScoreEOP, theirScoreEOP = getAttributes(df.iloc[row])
-        # getAttributes(curAction)
         if name != curOpponent: ## new game
             curOpponent = name         
             ourScore = 0
@@ -49,8 +49,29 @@ def processActions(df, players):
                 players[defender].incrPulls(hangTime, game)
             elif action == 'PullOb':
                 players[defender].incrPulls(0.0, game)
-        if action == 'Goal' and eventType == 'Offense':
-            players[passer].incrAssists(game)
-            players[receiver].incrGoals(game)
+        if eventType == 'Offense':
+            if action == 'Goal':
+                players[passer].incrAssists(game)
+                players[receiver].incrGoals(game)
+                players[receiver].incrCatches(game)
+                if passer != 'Anonymous':
+                    players[passer].incrCmpltn(game)
+                if prevPasser != 'Anonymous':
+                    players[prevPasser].incrATOA(game)
+                    ## Add to plus minus? 
+            if action == 'Catch':
+                players[receiver].incrCatches(game)
+                prevPasser = passer
+                if passer != 'Anonymous':
+                    players[passer].incrCmpltn(game)
+            if action == 'Throwaway' and passer != 'Anonymous':
+                players[passer].incrThrowaways(game)
+            if action == 'Drop':
+                players[receiver].incrDrops(game)
+        if eventType == 'Defense':
+            if action == 'D':
+                if defender != 'Anonymous':
+                    players[defender].incrDs(game)
+            
 
     return players
