@@ -12,8 +12,10 @@ class Game:
         self.throwaways = 0
         self.drops = 0
         self.ds = 0
+        self.ogPlusMinus = 0
         self.completions = 0
-
+    def changeOGPM(self, num):
+        self.ogPlusMinus += num
     def incrPP(self):
         self.pointsPlayed += 1
     def incrPulls(self, pull):
@@ -24,6 +26,8 @@ class Game:
         self.goals += 1
     def incrCatches(self):
         self.catches += 1
+    def changePM(self, num):
+        self.plusMinus += num
     def incrATOA(self):
         self.assistsToAssists += 1
     def incrDs(self):

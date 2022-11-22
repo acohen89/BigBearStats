@@ -29,15 +29,22 @@ class Player:
         return 1 - (self.throwaways / (self.completions + self.throwaways))
     def numberGamesPlayed(self):
         return len(self.games)
+    def calcChanceOfScoring(self):
+        if self.opsToScore == 0.0:
+            return 0.0
+        return self.pointsWhenPlaying / self.opsToScore
     def __init__(self, name):
         self.name = name
         self.pointsPlayed = 0
         self.pulls = []
         self.goals = 0
+        self.pointsWhenPlaying = 0
         self.assists = 0 
         self.assistsToAssists = 0
         self.catches = 0
+        self.ogPlusMinus = 0
         self.plusMinus = 0
+        self.opsToScore = 0
         self.throwaways = 0
         self.drops = 0
         self.games = {} # Follow format of '(Tournament, 'Team'): Game(Tournament, 'Team')
@@ -48,6 +55,7 @@ class Player:
         self.avgPullHangtime = self.avgeragePullHangtime()
         self.passingPercent = self.calcPassingPercent()
         self.catchingPercent = self.calcCatchingPercent()
+        self.chanceOfScoring = self.calcChanceOfScoring()
         # computable variables are the following:
         # avgPullHangtime, obPulls, catchingPercent, passingPercent, 
     def checkForGame(self, game):
@@ -57,6 +65,10 @@ class Player:
         self.pointsPlayed += 1
         self.checkForGame(game)
         self.games[game].incrPP()
+    def changePM(self, game, num):
+        self.checkForGame(game)
+        self.plusMinus += num
+        self.games[game].changePM(num)
     def incrAssists(self, game):
         self.checkForGame(game)
         self.assists += 1   
@@ -74,6 +86,10 @@ class Player:
         self.completions += 1
         self.games[game].incrCompletions()
         self.catchingPercent = self.calcCatchingPercent()
+    def changeOGPM(self, game, num):
+        self.checkForGame(game)
+        self.ogPlusMinus += num
+        self.games[game].changeOGPM(num)
     def incrPulls(self, pull, game):
         if pull == 0.0:
             self.obPulls += 1
@@ -91,6 +107,9 @@ class Player:
         self.catches += 1
         self.games[game].incrCatches()
         self.catchingPercent = self.calcCatchingPercent()
+    def incrOpsToScore(self):
+        self.opsToScore += 1
+        self.chanceOfScoring = self.calcChanceOfScoring()
     def incrThrowaways(self, game):
         self.throwaways += 1
         self.checkForGame(game)
@@ -107,6 +126,9 @@ class Player:
         self.ds += 1
         self.checkForGame(game)
         self.games[game].incrDs()
+    def incrPointsWhenPlaying(self):
+        self.pointsWhenPlaying += 1
+        self.chanceOfScoring = self.calcChanceOfScoring()
     def incrCompletions(self):
         self.completions += 1
     def __eq__(self, other):

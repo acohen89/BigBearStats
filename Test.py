@@ -28,7 +28,7 @@ class Test(unittest.TestCase):
     players = getPlayers(df) 
     playersDF = pd.DataFrame.from_records((vars(player) for player in list(players.values())), index='name')
     df = df.rename(columns={'Tournamemnt': 'Tournament'})
-    players = processActions(df, players)
+    players, pullsHangTime = processActions(df, players)
     playersDF = pd.DataFrame.from_records((vars(player) for player in list(players.values())), index='name')
     
     def testPointsPlayed(self):
@@ -141,7 +141,11 @@ class Test(unittest.TestCase):
         self.assertEqual(self.playersDF.loc[:,'games']['Billy'][('Showcase', 'NYU')].ds, 0)        
         self.assertEqual(self.playersDF.loc[:,'games']['C^2'][('Cav Cup', 'Elon')].ds
         + self.playersDF.loc[:,'games']['C^2'][('Porbter Lot', 'Maine')].ds, 3)        
-
     
-
+    def testOGPM(self):
+        ## Test ogPlusMinus
+        self.assertEqual(self.playersDF.loc[:,'ogPlusMinus']['Sam'], -4)
+        self.assertEqual(self.playersDF.loc[:,'ogPlusMinus']['Manny'], -1)
+        self.assertEqual(self.playersDF.loc[:,'ogPlusMinus']['Dreq'], 22)
+        self.assertEqual(self.playersDF.loc[:,'ogPlusMinus']['Champagn'], 4)
 unittest.main()

@@ -7,6 +7,7 @@ def incrementPointsPlayed(curAction, players):
         players[curAction[playerCol]].incrPP(game)
     return players
 def getAttributes(curAction):
+    activePlayers = []
     name = curAction.name
     game = (curAction['Tournament'], curAction.name)
     line = curAction['Line']
@@ -16,37 +17,55 @@ def getAttributes(curAction):
     receiver = curAction['Receiver']   
     defender = curAction['Defender']   
     hangTime = curAction['Hang Time (secs)']   
-    player0 = curAction['Player 0']   
-    player1 = curAction['Player 1']   
-    player2 = curAction['Player 2']   
-    player3 = curAction['Player 3']   
-    player4 = curAction['Player 4']   
-    player5 = curAction['Player 5']   
-    player6 = curAction['Player 6']   
+    activePlayers.append(curAction['Player 0'])
+    activePlayers.append(curAction['Player 2'])
+    activePlayers.append(curAction['Player 2'])
+    activePlayers.append(curAction['Player 3'])
+    activePlayers.append(curAction['Player 4'])
+    activePlayers.append(curAction['Player 5'])
+    activePlayers.append(curAction['Player 6'])  
     ourScoreEOP = curAction['Our Score - End of Point']
     theirScoreEOP = curAction['Their Score - End of Point']
-    return (name, game, line, eventType, action, passer, receiver, defender, hangTime, player0, player1, player2, player3, player4, player5, player6, ourScoreEOP, theirScoreEOP)  
+    return (name, game, line, eventType, action, passer, receiver, defender, hangTime, activePlayers, ourScoreEOP, theirScoreEOP)  
 def processActions(df, players):
     curOpponent = ''
     ourScore = 0
     theirScore = 0
+    startingEventType = ''
+    pullHangtime = {}
+    activePull = False
+    activePullTime = 0.0
     prevPasser = 'Anonymous'
     for row in range(len(df)):
         curAction = df.iloc[row]
-        name, game, line, eventType, action, passer, receiver, defender, hangTime, player0, player1, player2, player3, player4, player5, player6, ourScoreEOP, theirScoreEOP = getAttributes(df.iloc[row])
+        name, game, line, eventType, action, passer, receiver, defender, hangTime, activePlayers, ourScoreEOP, theirScoreEOP = getAttributes(df.iloc[row])
+        # print(f'{game} {line} Our Score: {ourScoreEOP} Their Score: {theirScoreEOP} Event Type: {eventType} Action: {action}\n')
+           # print(f'Our Score: {ourScore} Their Score: {theirScore} Event: {startingEventType}')
+        if startingEventType != eventType: 
+            startingEventType = eventType
+            if startingEventType == 'Offense':
+              for player in activePlayers:
+                players[player].incrOpsToScore()
         if name != curOpponent: ## new game
             curOpponent = name         
             ourScore = 0
             theirScore = 0
+            startingEventType = eventType
+            # print(f'Game: {game} Our Score: {ourScore} Their Score: {theirScore} Event: {startingEventType}')
         if ourScoreEOP != ourScore: ## after this action, we scored
             ourScore = ourScoreEOP
+            activePull = False
             players = incrementPointsPlayed(curAction, players)
         elif theirScoreEOP != theirScore: ## after this action they score
             players = incrementPointsPlayed(curAction, players)
             theirScore = theirScoreEOP
+            activePull = False
         if defender != 'Anonymous':
             if action == 'Pull':
                 players[defender].incrPulls(hangTime, game)
+                activePullTime = hangTime
+                pullHangtime[activePullTime] = False
+                activePull = True
             elif action == 'PullOb':
                 players[defender].incrPulls(0.0, game)
         if eventType == 'Offense':
@@ -54,24 +73,52 @@ def processActions(df, players):
                 players[passer].incrAssists(game)
                 players[receiver].incrGoals(game)
                 players[receiver].incrCatches(game)
+                players[receiver].changePM(game, 1.0) ## They score, PM + 1
+                players[passer].changePM(game, 0.8) ## They assist, PM + 0.8
+                players[passer].changeOGPM(game, 1)
+                players[receiver].changeOGPM(game, 1)
+                for player in activePlayers: 
+                    players[player].incrPointsWhenPlaying()
+                    players[player].changePM(game, 0.15) ## They are on the field when we score, PM + 0.15
                 if passer != 'Anonymous':
                     players[passer].incrCmpltn(game)
                 if prevPasser != 'Anonymous':
                     players[prevPasser].incrATOA(game)
-                    ## Add to plus minus? 
-            if action == 'Catch':
+                    players[player].changePM(game, 0.05) ## Assist To Assist, PM +0.05
+            elif action == 'Catch':
                 players[receiver].incrCatches(game)
                 prevPasser = passer
                 if passer != 'Anonymous':
                     players[passer].incrCmpltn(game)
-            if action == 'Throwaway' and passer != 'Anonymous':
+            elif action == 'Throwaway' and passer != 'Anonymous':
                 players[passer].incrThrowaways(game)
-            if action == 'Drop':
+                players[passer].changePM(game, -0.9)
+                players[passer].changeOGPM(game, -1)
+                for player in activePlayers: 
+                    players[player].changePM(game, -0.1)
+            elif action == 'Drop':
                 players[receiver].incrDrops(game)
+                players[receiver].changePM(game, -0.75)
+                players[receiver].changeOGPM(game, -1)
+                for player in activePlayers:
+                    players[player].changePM(game, -0.1)
+            elif action == 'Stall':
+                players[passer].changePM(game, -1.0)
+                players[passer].changeOGPM(game, -1)
         if eventType == 'Defense':
-            if action == 'D':
-                if defender != 'Anonymous':
+            if action == 'D' or action == 'Throwaway':
+                if activePull:
+                    pullHangtime[activePullTime] = True
+                    activePull = False
+                if action == 'D' and defender != 'Anonymous':
                     players[defender].incrDs(game)
-            
-
-    return players
+                    players[defender].changePM(game, 0.9)
+                    players[defender].changeOGPM(game, 1)
+                    for player in activePlayers:
+                        players[player].changePM(game, 0.05)
+            elif action == 'Callahan':
+                players[defender].changePM(game, 2)
+                players[defender].changeOGPM(game, 2)
+                for player in activePlayers:
+                        players[player].changePM(game, 0.05)
+    return (players, pullHangtime)
