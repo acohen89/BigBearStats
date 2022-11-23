@@ -39,8 +39,6 @@ def processActions(df, players):
     for row in range(len(df)):
         curAction = df.iloc[row]
         name, game, line, eventType, action, passer, receiver, defender, hangTime, activePlayers, ourScoreEOP, theirScoreEOP = getAttributes(df.iloc[row])
-        # print(f'{game} {line} Our Score: {ourScoreEOP} Their Score: {theirScoreEOP} Event Type: {eventType} Action: {action}\n')
-           # print(f'Our Score: {ourScore} Their Score: {theirScore} Event: {startingEventType}')
         if startingEventType != eventType: 
             startingEventType = eventType
             if startingEventType == 'Offense':
@@ -51,7 +49,6 @@ def processActions(df, players):
             ourScore = 0
             theirScore = 0
             startingEventType = eventType
-            # print(f'Game: {game} Our Score: {ourScore} Their Score: {theirScore} Event: {startingEventType}')
         if ourScoreEOP != ourScore: ## after this action, we scored
             ourScore = ourScoreEOP
             activePull = False
