@@ -81,7 +81,7 @@ def processActions(df, players):
                     players[passer].incrCmpltn(game)
                 if prevPasser != 'Anonymous':
                     players[prevPasser].incrATOA(game)
-                    players[player].changePM(game, 0.05) ## Assist To Assist, PM +0.05
+                    players[player].changePM(game, 0.33) ## Assist To Assist, PM +0.05
             elif action == 'Catch':
                 players[receiver].incrCatches(game)
                 prevPasser = passer
@@ -98,7 +98,7 @@ def processActions(df, players):
                 players[receiver].changePM(game, -0.75)
                 players[receiver].changeOGPM(game, -1)
                 for player in activePlayers:
-                    players[player].changePM(game, -0.1)
+                    players[player].changePM(game, -0.05)
             elif action == 'Stall':
                 players[passer].changePM(game, -1.0)
                 players[passer].changeOGPM(game, -1)
