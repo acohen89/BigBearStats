@@ -5,6 +5,11 @@ def incrementPointsPlayed(curAction, players):
     game = (curAction['Tournament'], curAction.name)
     for playerCol in playerColNames:
         players[curAction[playerCol]].incrPP(game)
+        if curAction['Event Type'] == 'Offense':
+            players[curAction[playerCol]].incrOPointsPlayed()
+        elif curAction['Event Type'] == 'Defense':
+            players[curAction[playerCol]].incrDPointsPlayed()
+
     return players
 def getAttributes(curAction):
     activePlayers = []
@@ -35,6 +40,7 @@ def processActions(df, players):
     pullHangtime = {}
     activePull = False
     activePullTime = 0.0
+    newOpToScore = True
     prevPasser = 'Anonymous'
     for row in range(len(df)):
         curAction = df.iloc[row]
@@ -52,11 +58,19 @@ def processActions(df, players):
         if ourScoreEOP != ourScore: ## after this action, we scored
             ourScore = ourScoreEOP
             activePull = False
+            newOpToScore = True
             players = incrementPointsPlayed(curAction, players)
         elif theirScoreEOP != theirScore: ## after this action they score
             players = incrementPointsPlayed(curAction, players)
             theirScore = theirScoreEOP
             activePull = False
+            newOpToScore = True
+        if action == 'Goal' and line == 'D' and eventType == 'Offense':
+            for player in activePlayers:
+                players[player].incrNumBreaks()
+        if action == 'Goal' and line == 'O' and eventType == 'Defense':
+            for player in activePlayers:
+                players[player].incrNumBroken()
         if defender != 'Anonymous':
             if action == 'Pull':
                 players[defender].incrPulls(hangTime, game)
@@ -66,6 +80,10 @@ def processActions(df, players):
             elif action == 'PullOb':
                 players[defender].incrPulls(0.0, game)
         if eventType == 'Offense':
+            if newOpToScore:
+                for player in activePlayers: 
+                    players[player].incrOpsToScore()
+                newOpToScore = False
             if action == 'Goal':
                 players[passer].incrAssists(game)
                 players[receiver].incrGoals(game)

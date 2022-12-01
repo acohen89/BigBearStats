@@ -33,6 +33,15 @@ class Player:
         if self.opsToScore == 0.0:
             return 0.0
         return self.pointsWhenPlaying / self.opsToScore
+    def calcBreakChance(self):
+        if self.DPointsPlayed == 0:
+            return 0.0
+        return self.numBreaks / self.DPointsPlayed
+    def calcBrokenChance(self):
+        if self.OPointsPlayed == 0:
+            return 0.0
+        return self.numBroken / self.OPointsPlayed
+    
     def __init__(self, name):
         self.name = name
         self.pointsPlayed = 0
@@ -45,6 +54,10 @@ class Player:
         self.ogPlusMinus = 0
         self.plusMinus = 0
         self.opsToScore = 0
+        self.OPointsPlayed = 0
+        self.DPointsPlayed = 0
+        self.numBreaks = 0
+        self.numBroken = 0
         self.throwaways = 0
         self.drops = 0
         self.games = {} # Follow format of '(Tournament, 'Team'): Game(Tournament, 'Team')
@@ -56,11 +69,27 @@ class Player:
         self.passingPercent = self.calcPassingPercent()
         self.catchingPercent = self.calcCatchingPercent()
         self.chanceOfScoring = self.calcChanceOfScoring()
+        self.breakChance = self.calcBreakChance()
+        self.brokenChance = self.calcBrokenChance()
         # computable variables are the following:
         # avgPullHangtime, obPulls, catchingPercent, passingPercent, 
     def checkForGame(self, game):
         if game not in self.games: 
             self.games.update({game: Game(game[0], game[1])})
+    def incrNumBreaks(self):
+        self.numBreaks += 1
+        self.breakChance = self.calcBreakChance()
+    def incrNumBroken(self):
+        self.numBroken += 1
+        self.brokenChance = self.calcBrokenChance()
+    def incrOPointsPlayed(self):
+        self.OPointsPlayed +=1
+        self.brokenChance = self.calcBrokenChance()
+    def incrOpsToScore(self):
+        self.opsToScore += 1
+    def incrDPointsPlayed(self):
+        self.DPointsPlayed +=1
+        self.breakChance = self.calcBreakChance()
     def incrPP(self, game):
         self.pointsPlayed += 1
         self.checkForGame(game)
